@@ -12,5 +12,17 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
+        android:text="Hello World!"
+        android:id="@+id/textView" />
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Simple UI"
+        android:id="@+id/button1"
+        android:layout_below="@+id/textView"
+        android:layout_alignParentLeft="false"
+        android:layout_alignParentStart="true"
+        android:onClick="submit" />
 </RelativeLayout>
