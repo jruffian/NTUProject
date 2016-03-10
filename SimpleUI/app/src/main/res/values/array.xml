@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="stroeInfo">
+        <item>Arm</item>
+        <item>Xtensa</item>
+        <item>Atom</item>
+        <item>Intel</item>
+        <item>Qumm</item>
+    </string-array>
+
+    <string-array name="numberInfo">
+        <item>壹</item>
+        <item>貳</item>
+        <item>參</item>
+        <item>肆</item>
+        <item>伍</item>
+    </string-array>
+</resources>
