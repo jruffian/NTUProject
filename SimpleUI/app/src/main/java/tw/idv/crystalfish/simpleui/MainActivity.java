@@ -19,6 +19,8 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final int REQUEST_CODE_MENU_ACITVITY = 0;
+
     Button button1;
     TextView textView;
     EditText editText;
@@ -120,6 +122,18 @@ public class MainActivity extends AppCompatActivity {
     {
         Intent intent = new Intent();
         intent.setClass(this, DrinkMenuActivity.class);
-        startActivity(intent);
+//        startActivity(intent);
+        startActivityForResult(intent, REQUEST_CODE_MENU_ACITVITY);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_CODE_MENU_ACITVITY)
+        {
+            if (resultCode == RESULT_OK)
+                textView.setText(data.getStringExtra("result"));
+        }
     }
 }
