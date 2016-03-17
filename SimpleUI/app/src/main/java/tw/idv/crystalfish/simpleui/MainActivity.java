@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -16,6 +17,15 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.parse.Parse;
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.SaveCallback;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     Spinner spinner;
     //save data in phone
     SharedPreferences sp;
+    String menuResult;
     /* if you want save data in the phone,
        you must a editor(pen)
     */
@@ -85,6 +96,19 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        Parse.enableLocalDatastore(this);
+        Parse.initialize(this);
+        ParseObject testObject = new ParseObject("TestObject");
+        testObject.put("student", "iam good student");
+        testObject.saveInBackground(new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+                if (e != null) {
+                    Log.d("debug", e.toString());
+                }
+            }
+        });
     }
 
     private void setSpinner()
@@ -132,8 +156,28 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == REQUEST_CODE_MENU_ACITVITY)
         {
-            if (resultCode == RESULT_OK)
-                textView.setText(data.getStringExtra("result"));
+            if (resultCode == RESULT_OK) {
+                menuResult = data.getStringExtra("result");
+
+                try {
+                    JSONArray array = new JSONArray(menuResult);
+                    String text = "";
+                    for (int i = 0; i < array.length(); i++)
+                    {
+                        JSONObject object  = array.getJSONObject(i);
+                        String DrinkName = object.getString("name");
+                        String mNumber = String.valueOf(object.getInt("mNumber"));
+                        String lNumber = String.valueOf(object.getInt("lNumber"));
+
+                        text = text + "Name:" + DrinkName + "m: " + mNumber + "l: " + lNumber + "\n";
+                    }
+                    textView.setText(text);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+//                textView.setText(data.getStringExtra("result"));
         }
     }
 }
