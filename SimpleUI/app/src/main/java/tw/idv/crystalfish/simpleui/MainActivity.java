@@ -14,18 +14,26 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.parse.FindCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseObject;
+import com.parse.ParseQuery;
 import com.parse.SaveCallback;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
        you must a editor(pen)
     */
     SharedPreferences.Editor editor;
+    List<ParseObject> queryResults;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,8 +87,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        setListView();
+        //setListView();
         setSpinner();
+        setHistory();
 
         hidecheckBox = (CheckBox)findViewById(R.id.checkBox);
         /* save checkBox status to hideCheckBox, and set the default value "false"*/
@@ -97,8 +107,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Parse.enableLocalDatastore(this);
-        Parse.initialize(this);
+//        Parse.enableLocalDatastore(this);
+//        Parse.initialize(this);
         ParseObject testObject = new ParseObject("TestObject");
         testObject.put("student", "iam good student");
         testObject.saveInBackground(new SaveCallback() {
@@ -126,10 +136,65 @@ public class MainActivity extends AppCompatActivity {
         listView.setAdapter(adapter);
     }
 
+    private void setHistory()
+    {
+        ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("Order");
+        query.findInBackground(new FindCallback<ParseObject>() {
+            @Override
+            public void done(List<ParseObject> list, ParseException e) {
+                if (e != null)
+                {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                queryResults = list;
+                List<Map<String, String>> data = new ArrayList<Map<String, String>>();
+                for (int i = 0; i < queryResults.size(); i++) {
+                    ParseObject object = queryResults.get(i);
+                    String note = object.getString("note");
+                    String storeInfo = object.getString("storeInfo");
+                    String menu = object.getString("menu");
+
+                    Map<String, String> item = new HashMap<String, String>();
+                    item.put("note", note);
+                    item.put("storeInfo", storeInfo);
+                    item.put("drinkName", "15");
+
+                    data.add(item);
+                }
+
+                String[] from = {"note", "storeInfo", "drinkName"};
+                int[] to = {R.id.note, R.id.storeInfo, R.id.drinkName};
+                SimpleAdapter list_adapter = new SimpleAdapter(MainActivity.this, data,R.layout.listview_item, from, to);
+                listView.setAdapter(list_adapter);
+            }
+        });
+
+    }
+
     public void submit(View view)
     {
         //Toast.makeText(this, "Hello world", Toast.LENGTH_LONG);
         String text = editText.getText().toString();
+
+/*        ParseObject orderObject = new ParseObject("Order");
+        orderObject.put("note", text);
+        orderObject.put("storeInfo", spinner.getSelectedItem());
+        orderObject.put("menu", menuResult); */
+        ParseObject orderObject = new ParseObject("HomeworkParse");
+        orderObject.put("sid", text);
+
+        orderObject.saveInBackground(new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+                if (e != null)
+                    Toast.makeText(MainActivity.this, "order is success", Toast.LENGTH_LONG).show();
+                else
+                    Toast.makeText(MainActivity.this, "order is fail", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         utils.writeFile(this, "history.txt", text + '\n');
         if (hidecheckBox.isChecked()) {
             Toast.makeText(this, text, Toast.LENGTH_LONG);
@@ -169,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
                         String mNumber = String.valueOf(object.getInt("mNumber"));
                         String lNumber = String.valueOf(object.getInt("lNumber"));
 
-                        text = text + "Name:" + DrinkName + "m: " + mNumber + "l: " + lNumber + "\n";
+                        text = text + "Name:" + DrinkName + " m: " + mNumber + " l: " + lNumber + "\n";
                     }
                     textView.setText(text);
                 } catch (JSONException e) {

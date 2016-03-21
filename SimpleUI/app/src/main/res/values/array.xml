@@ -9,10 +9,10 @@
     </string-array>
 
     <string-array name="numberInfo">
-        <item>壹</item>
-        <item>貳</item>
-        <item>參</item>
-        <item>肆</item>
-        <item>伍</item>
+        <item>壹店</item>
+        <item>貳店</item>
+        <item>參店</item>
+        <item>肆店</item>
+        <item>伍店</item>
     </string-array>
 </resources>
