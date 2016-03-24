@@ -1,18 +1,24 @@
 package tw.idv.crystalfish.simpleui;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
@@ -38,6 +44,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_MENU_ACITVITY = 0;
+    private static final int REQUEST_CODE_CAMERA = 1;
 
     Button button1;
     TextView textView;
@@ -48,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
     //save data in phone
     SharedPreferences sp;
     String menuResult;
+    ImageView imageView;
+
     /* if you want save data in the phone,
        you must a editor(pen)
     */
@@ -64,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         editText = (EditText)findViewById(R.id.editText);
         listView = (ListView)findViewById(R.id.listView);
         spinner = (Spinner)findViewById(R.id.spinner);
+        imageView = (ImageView)findViewById(R.id.imageView);
         /* create a storage memory in phone its name is "setting" */
         sp = getSharedPreferences("setting", Context.MODE_PRIVATE);
         editor = sp.edit();
@@ -123,9 +133,27 @@ public class MainActivity extends AppCompatActivity {
 
     private void setSpinner()
     {
-        String[] data = getResources().getStringArray(R.array.numberInfo); //{"壹","貳", "參", "肆", "伍"};
+        ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("StoreInfo");
+        query.findInBackground(new FindCallback<ParseObject>() {
+            @Override
+            public void done(List<ParseObject> list, ParseException e) {
+                if (e != null) {
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String[] stores = new String[list.size()];
+                for (int i = 0; i < list.size(); i++) {
+                    ParseObject object = list.get(i);
+                    stores[i] = object.getString("name") + ", " + object.getString("address");
+                }
+                ArrayAdapter<String> storeAdapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, stores);
+                spinner.setAdapter(storeAdapter);
+            }
+        });
+
+        /*        String[] data = getResources().getStringArray(R.array.numberInfo); //{"壹","貳", "參", "肆", "伍"};
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, data);
-        spinner.setAdapter(adapter);
+        spinner.setAdapter(adapter);*/
     }
 
     private void setListView()
@@ -142,31 +170,43 @@ public class MainActivity extends AppCompatActivity {
         query.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> list, ParseException e) {
-                if (e != null)
-                {
+                if (e != null) {
                     Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 queryResults = list;
+
                 List<Map<String, String>> data = new ArrayList<Map<String, String>>();
                 for (int i = 0; i < queryResults.size(); i++) {
                     ParseObject object = queryResults.get(i);
                     String note = object.getString("note");
                     String storeInfo = object.getString("storeInfo");
                     String menu = object.getString("menu");
-
+                    String count;
+                    int number = 0;
+                 //
+                    for(int j = 0; j < menu.length(); j++) {
+                        final char c = menu.charAt(j);
+                        if (Character.isDigit(c)) {
+//                            Log.d("debug", "c = " + c);
+                            number += (int)c-0x30;
+                        }
+                    }
+                 //
+                   count = String.valueOf(number);
+                    Log.d("debug", "number = " + number);
                     Map<String, String> item = new HashMap<String, String>();
                     item.put("note", note);
                     item.put("storeInfo", storeInfo);
-                    item.put("drinkName", "15");
+                    item.put("drinkName", count);
 
                     data.add(item);
                 }
 
                 String[] from = {"note", "storeInfo", "drinkName"};
                 int[] to = {R.id.note, R.id.storeInfo, R.id.drinkName};
-                SimpleAdapter list_adapter = new SimpleAdapter(MainActivity.this, data,R.layout.listview_item, from, to);
+                SimpleAdapter list_adapter = new SimpleAdapter(MainActivity.this, data, R.layout.listview_item, from, to);
                 listView.setAdapter(list_adapter);
             }
         });
@@ -178,17 +218,17 @@ public class MainActivity extends AppCompatActivity {
         //Toast.makeText(this, "Hello world", Toast.LENGTH_LONG);
         String text = editText.getText().toString();
 
-/*        ParseObject orderObject = new ParseObject("Order");
+       ParseObject orderObject = new ParseObject("Order");
         orderObject.put("note", text);
         orderObject.put("storeInfo", spinner.getSelectedItem());
-        orderObject.put("menu", menuResult); */
-        ParseObject orderObject = new ParseObject("HomeworkParse");
-        orderObject.put("sid", text);
+        orderObject.put("menu", menuResult);
+/*        ParseObject orderObject = new ParseObject("HomeworkParse");
+        orderObject.put("sid", text);*/
 
         orderObject.saveInBackground(new SaveCallback() {
             @Override
             public void done(ParseException e) {
-                if (e != null)
+                if (e == null)
                     Toast.makeText(MainActivity.this, "order is success", Toast.LENGTH_LONG).show();
                 else
                     Toast.makeText(MainActivity.this, "order is fail", Toast.LENGTH_SHORT).show();
@@ -218,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
+        Toast.makeText(MainActivity.this, "PHOTO0", Toast.LENGTH_SHORT).show();
         if (requestCode == REQUEST_CODE_MENU_ACITVITY)
         {
             if (resultCode == RESULT_OK) {
@@ -240,9 +280,43 @@ public class MainActivity extends AppCompatActivity {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
             }
 //                textView.setText(data.getStringExtra("result"));
+        } else if (requestCode == REQUEST_CODE_CAMERA) {
+            Toast.makeText(MainActivity.this, "PHOTO1", Toast.LENGTH_SHORT).show();
+            if (resultCode == RESULT_OK)
+            {
+                Toast.makeText(MainActivity.this, "PHOTO2", Toast.LENGTH_SHORT).show();
+                imageView.setImageURI(utils.getPhotoUti());
+            }
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+        if (id == R.id.actio_take_photo)
+        {
+            Toast.makeText(this, "take photo", Toast.LENGTH_SHORT);
+            goToCamera();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void goToCamera()
+    {
+        Intent new_intent = new Intent();
+        new_intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
+        new_intent.putExtra(MediaStore.EXTRA_OUTPUT, utils.getPhotoUti());
+        startActivityForResult(new_intent, REQUEST_CODE_CAMERA);
+  //      startActivity(new_intent);
     }
 }

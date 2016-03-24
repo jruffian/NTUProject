@@ -1,7 +1,10 @@
 package tw.idv.crystalfish.simpleui;
 
 import android.content.Context;
+import android.net.Uri;
+import android.os.Environment;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -38,5 +41,17 @@ public class utils {
             e.printStackTrace();
         }
         return "";
+    }
+
+    public static Uri getPhotoUti()
+    {
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+
+        if (dir.exists() == false)
+        {
+            dir.mkdir();
+        }
+        File file = new File(dir, "simple_photo.png");
+        return Uri.fromFile(file);
     }
 }
