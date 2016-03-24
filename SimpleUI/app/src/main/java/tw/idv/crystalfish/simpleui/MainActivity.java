@@ -1,9 +1,12 @@
 package tw.idv.crystalfish.simpleui;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
@@ -13,6 +16,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -20,6 +24,7 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -28,6 +33,7 @@ import android.widget.Toast;
 import com.parse.FindCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
@@ -46,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_MENU_ACITVITY = 0;
     private static final int REQUEST_CODE_CAMERA = 1;
 
+    private boolean hasPhoto = false;
+
     Button button1;
     TextView textView;
     EditText editText;
@@ -56,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences sp;
     String menuResult;
     ImageView imageView;
+    ProgressDialog progressDialog;
+    ProgressBar progressBar;
 
     /* if you want save data in the phone,
        you must a editor(pen)
@@ -77,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
         /* create a storage memory in phone its name is "setting" */
         sp = getSharedPreferences("setting", Context.MODE_PRIVATE);
         editor = sp.edit();
+        progressDialog = new ProgressDialog(this);
+        progressBar = (ProgressBar)findViewById(R.id.progressBar);
 
         /* we would get the string of the editText of setting
         *  first time, it is no data in the editText, so we
@@ -104,12 +116,20 @@ public class MainActivity extends AppCompatActivity {
         hidecheckBox = (CheckBox)findViewById(R.id.checkBox);
         /* save checkBox status to hideCheckBox, and set the default value "false"*/
         hidecheckBox.setChecked(sp.getBoolean("hideCheckBox", false));
+
         hidecheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 /* get the hideCheckBox status */
                 editor.putBoolean("hideCheckBox", hidecheckBox.isChecked());
                 editor.apply();
+
+                if (isChecked) {
+                    imageView.setVisibility(View.INVISIBLE);
+                } else {
+                    imageView.setVisibility(View.VISIBLE);
+                }
+
                 if (!hidecheckBox.isChecked()) {
                     editText.setText("");
                     textView.setText("");
@@ -117,18 +137,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        Parse.enableLocalDatastore(this);
-//        Parse.initialize(this);
-        ParseObject testObject = new ParseObject("TestObject");
-        testObject.put("student", "iam good student");
-        testObject.saveInBackground(new SaveCallback() {
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void done(ParseException e) {
-                if (e != null) {
-                    Log.d("debug", e.toString());
-                }
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                goToDetailOrder(position);
             }
         });
+
     }
 
     private void setSpinner()
@@ -185,16 +200,27 @@ public class MainActivity extends AppCompatActivity {
                     String menu = object.getString("menu");
                     String count;
                     int number = 0;
-                 //
-                    for(int j = 0; j < menu.length(); j++) {
+                    //
+                    for (int j = 0; j < menu.length(); j++) {
                         final char c = menu.charAt(j);
                         if (Character.isDigit(c)) {
-//                            Log.d("debug", "c = " + c);
-                            number += (int)c-0x30;
+                            number += (int) c - 0x30;
                         }
                     }
-                 //
-                   count = String.valueOf(number);
+                    //
+/*
+                    int drirkNum = 0;
+                    try {
+                        JSONArray array = new JSONArray(menu);
+                        for (int j = 0; j <array.length();j++) {
+                            JSONObject order = JSONObject.get(j);
+                            drirkNum += order.getInt("mNumber") + order.getInt("lNumber");
+                        }
+                    } catch (JSONException err) {
+                        err.printStackTrace();
+                    }
+*/
+                    count = String.valueOf(number);
                     Log.d("debug", "number = " + number);
                     Map<String, String> item = new HashMap<String, String>();
                     item.put("note", note);
@@ -208,6 +234,8 @@ public class MainActivity extends AppCompatActivity {
                 int[] to = {R.id.note, R.id.storeInfo, R.id.drinkName};
                 SimpleAdapter list_adapter = new SimpleAdapter(MainActivity.this, data, R.layout.listview_item, from, to);
                 listView.setAdapter(list_adapter);
+                listView.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.GONE);
             }
         });
 
@@ -225,23 +253,37 @@ public class MainActivity extends AppCompatActivity {
 /*        ParseObject orderObject = new ParseObject("HomeworkParse");
         orderObject.put("sid", text);*/
 
+        if (hasPhoto) {
+            Uri uri = utils.getPhotoUti();
+            ParseFile file = new ParseFile("photo.png", utils.uriToBytes(this, uri));
+
+            orderObject.put("photo", file);
+        }
+        progressDialog.setTitle("Loaging...");
+        progressDialog.show();
         orderObject.saveInBackground(new SaveCallback() {
             @Override
             public void done(ParseException e) {
-                if (e == null)
+                progressDialog.dismiss();
+                if (e == null) {
                     Toast.makeText(MainActivity.this, "order is success", Toast.LENGTH_LONG).show();
-                else
+                    imageView.setImageResource(0);
+                    editText.setText("");
+                    textView.setText("");
+                    hasPhoto = false;
+                    setHistory();
+                } else
                     Toast.makeText(MainActivity.this, "order is fail", Toast.LENGTH_SHORT).show();
             }
         });
 
-        utils.writeFile(this, "history.txt", text + '\n');
-        if (hidecheckBox.isChecked()) {
+         utils.writeFile(this, "history.txt", text + '\n');
+        /*if (hidecheckBox.isChecked()) {
             Toast.makeText(this, text, Toast.LENGTH_LONG);
             textView.setText("xxxxxxxxxxx");
             editText.setText("xxxxxxxxxxx");
             return;
-        }
+        }*/
         editText.setText("");
         textView.setText(text);
         setListView();
@@ -283,11 +325,10 @@ public class MainActivity extends AppCompatActivity {
             }
 //                textView.setText(data.getStringExtra("result"));
         } else if (requestCode == REQUEST_CODE_CAMERA) {
-            Toast.makeText(MainActivity.this, "PHOTO1", Toast.LENGTH_SHORT).show();
             if (resultCode == RESULT_OK)
             {
-                Toast.makeText(MainActivity.this, "PHOTO2", Toast.LENGTH_SHORT).show();
                 imageView.setImageURI(utils.getPhotoUti());
+                hasPhoto = true;
             }
         }
     }
@@ -313,10 +354,38 @@ public class MainActivity extends AppCompatActivity {
 
     private void goToCamera()
     {
+        if (Build.VERSION.SDK_INT >= 23)
+        {
+//            if (checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
+              if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{"android.permission.WRITE_EXTERNAL_STORAGE"}, 0);
+                return;
+            }
+        }
+
         Intent new_intent = new Intent();
         new_intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
         new_intent.putExtra(MediaStore.EXTRA_OUTPUT, utils.getPhotoUti());
         startActivityForResult(new_intent, REQUEST_CODE_CAMERA);
   //      startActivity(new_intent);
+    }
+
+    public void goToDetailOrder(int position)
+    {
+        ParseObject object = queryResults.get(position);
+
+        Intent intent = new Intent();
+        intent.setClass(this, OrderDtailActivity.class);
+
+        intent.putExtra("note", object.getString("note"));
+        intent.putExtra("storeInfo", object.getString("storeInfo"));
+        intent.putExtra("menu", object.getString("menu"));
+
+        if (object.getParseFile("photo") != null)
+        {
+            intent.putExtra("photoURL", object.getParseFile("photo").getUrl());
+        }
+
+        startActivity(intent);
     }
 }

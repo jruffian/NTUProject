@@ -50,7 +50,8 @@
         android:id="@+id/listView"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_below="@+id/spinner" />
+        android:layout_below="@+id/spinner"
+        android:visibility="gone" />
 
     <Button
         android:layout_width="wrap_content"
@@ -87,5 +88,12 @@
         android:layout_toRightOf="@+id/spinner"
         android:layout_toEndOf="@+id/spinner"
         android:src = "@mipmap/g3_hdpi" />
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/progressBar"
+        android:layout_below="@+id/spinner"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>
