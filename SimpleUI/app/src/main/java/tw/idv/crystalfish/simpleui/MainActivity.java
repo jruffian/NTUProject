@@ -221,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 */
                     count = String.valueOf(number);
-                    Log.d("debug", "number = " + number);
+//                    Log.d("debug", "number = " + number);
                     Map<String, String> item = new HashMap<String, String>();
                     item.put("note", note);
                     item.put("storeInfo", storeInfo);
