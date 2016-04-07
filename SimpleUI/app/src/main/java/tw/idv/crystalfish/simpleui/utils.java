@@ -89,7 +89,7 @@ public class utils {
     public static byte[] urlToBytes(String urlString)
     {
         try {
-            Log.d("debug", "urlString" + urlString);
+            Log.d("debug", "urlString = " + urlString);
             URL url = new URL(urlString);
             URLConnection connection = url.openConnection();
             InputStream is = connection.getInputStream();
@@ -116,6 +116,7 @@ public class utils {
     {
         try {
             address = URLEncoder.encode(address,"utf-8");
+            Log.d("debug", "getGeoCoding = " + address);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -139,7 +140,7 @@ public class utils {
 
             double lat = location.getDouble("lat");
             double lng = location.getDouble("lng");
-
+            Log.d("debug", "getkatlngFromString ");
             return new double[]{lat, lng};
 
         } catch (JSONException e) {
@@ -153,6 +154,7 @@ public class utils {
         String url = utils.getGeoCodingUrl(address);
         byte[] bytes = utils.urlToBytes(url);
         String result = new String(bytes);
+//        Log.d("debug", "addressToLatlng = " + result);
         return utils.getLatLngFromString(result);
     }
 
@@ -160,7 +162,9 @@ public class utils {
     public static String getStaticMapUrl(double[] latlng, int zoom)
     {
         String center = latlng[0] + "," + latlng[1];
-        String url = "https://maps.googleapis.com/maps/api/staticmap?center=" + center + "&zoom=" + zoom + "&size=640*400";
+        String url = "https://maps.googleapis.com/maps/api/staticmap?center=" +
+                center + "&zoom=" + zoom + "&size=640x400";
+                //"https://maps.googleapis.com/maps/api/staticmap?center=" + center + "&zoom=" + zoom + "&size=640*400";
         return url;
     }
 

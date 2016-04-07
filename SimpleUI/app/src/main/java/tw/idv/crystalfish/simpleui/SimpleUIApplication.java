@@ -2,6 +2,7 @@ package tw.idv.crystalfish.simpleui;
 
 import android.app.Application;
 
+import com.facebook.FacebookSdk;
 import com.parse.Parse;
 
 /**
@@ -14,5 +15,7 @@ public class SimpleUIApplication extends Application {
 
         Parse.enableLocalDatastore(this);
         Parse.initialize(this);
+
+        FacebookSdk.sdkInitialize(getApplicationContext());
     }
 }
